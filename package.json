@@ -1,0 +1,22 @@
+{
+  "name": "banking-system-js",
+  "version": "1.0.0",
+  "description": "A modular banking system with interactive dashboard — built in vanilla JavaScript",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "serve": "npx serve@latest public -l 3456"
+  },
+  "keywords": [
+    "banking",
+    "finance",
+    "javascript",
+    "dashboard"
+  ],
+  "author": "masy43",
+  "license": "MIT",
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}
