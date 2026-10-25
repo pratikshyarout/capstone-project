@@ -1,7 +1,7 @@
 /**
  * Transaction service — deposit, withdrawal, transfer, and retrieval.
  */
-
+// Documentation sync test
 const {
   requirePositiveNumber,
   requireNonEmptyString,
