@@ -170,11 +170,67 @@ function updateBusinessLogic(files) {
   console.log("Updated source function inventory in docs/business-logic.md");
 }
 
+function updateTransactionDocumentation() {
+  const docPath = path.join(DOCS_DIR, "business-logic.md");
+  const startMarker = "<!-- AUTO-GENERATED: TRANSACTION RULES START -->";
+  const endMarker = "<!-- AUTO-GENERATED: TRANSACTION RULES END -->";
+
+  const generated = [
+    startMarker,
+    "## Transaction service behavior",
+    "",
+    "Source: `src/services/transactionService.js`",
+    "",
+    "### Deposits",
+    "- The deposit amount must pass `requirePositiveNumber`.",
+    "- The transaction is recorded as `DEPOSIT` with an ISO timestamp and resulting balance.",
+    "- The account balance is increased by the deposit amount.",
+    "",
+    "### Withdrawals",
+    "- The withdrawal amount must pass `requirePositiveNumber`.",
+    "- If the amount exceeds the balance, the withdrawal is not completed.",
+    "- An overdraft attempt deducts a penalty of 5 balance units and records `OVERDRAFT_ATTEMPT`.",
+    "- Otherwise, the amount is deducted and a `WITHDRAWAL` transaction is recorded.",
+    "",
+    "### Transfers",
+    "- Both source and destination accounts must have account numbers.",
+    "- The amount must pass `requirePositiveNumber` and cannot exceed the source balance.",
+    "- A successful transfer records `TRANSFER_OUT` and `TRANSFER_IN` entries.",
+    "- Both accounts' balances and transaction histories are updated.",
+    "",
+    "### Transaction retrieval",
+    "- The account argument must be an object.",
+    "- Transactions can be filtered by start date, end date, and transaction type.",
+    "- Date-only start boundaries use the start of the UTC day; date-only end boundaries use the end of the UTC day.",
+    "- Invalid dates and a start date later than the end date cause errors.",
+    "- Results are sorted newest first; transactions with invalid dates are excluded.",
+    "",
+    endMarker,
+  ].join("\n");
+
+  let content = fs.readFileSync(docPath, "utf8");
+  const start = content.indexOf(startMarker);
+  const end = content.indexOf(endMarker);
+
+  if (start !== -1 && end !== -1 && end >= start) {
+    content =
+      content.slice(0, start) +
+      generated +
+      content.slice(end + endMarker.length);
+  } else {
+    content += `\n\n${generated}\n`;
+  }
+
+  fs.writeFileSync(docPath, content);
+  console.log("Updated transaction behavior in docs/business-logic.md");
+}
+
 
 try {
   const files = readSourceFiles();
   updateConfiguration(files);
   updateBusinessLogic(files);
+  updateTransactionDocumentation();
   reportAffectedDocs();
 
   console.log(`Mapped ${files.length} source files to documentation targets.`);

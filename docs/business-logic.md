@@ -70,3 +70,34 @@ The application supports banking operations including account creation, deposits
 - `requirePositiveNumber()`
 
 <!-- AUTO-GENERATED: SOURCE FUNCTIONS END -->
+
+<!-- AUTO-GENERATED: TRANSACTION RULES START -->
+## Transaction service behavior
+
+Source: `src/services/transactionService.js`
+
+### Deposits
+- The deposit amount must pass `requirePositiveNumber`.
+- The transaction is recorded as `DEPOSIT` with an ISO timestamp and resulting balance.
+- The account balance is increased by the deposit amount.
+
+### Withdrawals
+- The withdrawal amount must pass `requirePositiveNumber`.
+- If the amount exceeds the balance, the withdrawal is not completed.
+- An overdraft attempt deducts a penalty of 5 balance units and records `OVERDRAFT_ATTEMPT`.
+- Otherwise, the amount is deducted and a `WITHDRAWAL` transaction is recorded.
+
+### Transfers
+- Both source and destination accounts must have account numbers.
+- The amount must pass `requirePositiveNumber` and cannot exceed the source balance.
+- A successful transfer records `TRANSFER_OUT` and `TRANSFER_IN` entries.
+- Both accounts' balances and transaction histories are updated.
+
+### Transaction retrieval
+- The account argument must be an object.
+- Transactions can be filtered by start date, end date, and transaction type.
+- Date-only start boundaries use the start of the UTC day; date-only end boundaries use the end of the UTC day.
+- Invalid dates and a start date later than the end date cause errors.
+- Results are sorted newest first; transactions with invalid dates are excluded.
+
+<!-- AUTO-GENERATED: TRANSACTION RULES END -->
