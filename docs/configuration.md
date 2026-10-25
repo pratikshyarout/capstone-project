@@ -24,12 +24,12 @@ Do not add API URLs, database connection strings, credentials, or environment-va
 <!-- AUTO-GENERATED: SOURCE INVENTORY START -->
 Last generated: 2026-10-25
 
-The following source files are used by the documentation sync script:
+## Source-to-documentation mapping
 
-- `src/services/transactionService.js`
-- `src/services/interestService.js`
-- `src/services/securityService.js`
-- `src/models/accountStore.js`
-- `src/utils/validators.js`
+- `src/services/transactionService.js` → `docs/business-logic.md`
+- `src/services/interestService.js` → `docs/business-logic.md`
+- `src/services/securityService.js` → `docs/business-logic.md`
+- `src/models/accountStore.js` → `docs/data-model.md`
+- `src/utils/validators.js` → `docs/business-logic.md`
 
 <!-- AUTO-GENERATED: SOURCE INVENTORY END -->

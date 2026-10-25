@@ -25,3 +25,48 @@ The application supports banking operations including account creation, deposits
 - An overdraft attempt triggers a $5 penalty in the transaction service.
 - The modular interest service and browser-compatible implementation may handle balance updates differently. Verify the active implementation before documenting the exact balance effect.
 - These descriptions reflect the supplied source files; they do not establish the existence of REST APIs or a persistent database.
+<!-- AUTO-GENERATED: SOURCE FUNCTIONS START -->
+## Source function inventory
+
+### `src/services/transactionService.js`
+
+- `addDeposit()`
+- `ensureTransactions()`
+- `if()`
+- `isDateOnly()`
+- `parseBoundaryMs()`
+- `retrieveTransactionsInRange()`
+- `transferMoney()`
+- `withdrawal()`
+
+### `src/services/interestService.js`
+
+- `calculateSaving()`
+- `if()`
+
+### `src/services/securityService.js`
+
+- `addDepositSafe()`
+- `assertAccountNotFrozen()`
+- `checkForSuspiciousActivity()`
+- `for()`
+- `if()`
+- `transferMoneySafe()`
+- `updateAccountStatus()`
+- `validatePassword()`
+- `withdrawalWithDailyLimit()`
+
+### `src/models/accountStore.js`
+
+- `generateBankAccount()`
+- `generateUniqueAccountNumber()`
+- `getAccounts()`
+- `if()`
+
+### `src/utils/validators.js`
+
+- `if()`
+- `requireNonEmptyString()`
+- `requirePositiveNumber()`
+
+<!-- AUTO-GENERATED: SOURCE FUNCTIONS END -->
