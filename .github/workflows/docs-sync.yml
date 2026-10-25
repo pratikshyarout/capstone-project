@@ -61,14 +61,18 @@ jobs:
           echo "docs/configuration.md"
 
           
-      - name: Test Copilot CLI generation
+      - name: Generate documentation updates
         if: steps.changes.outputs.relevant == 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           npm install --global @github/copilot
 
-          copilot -p "Read src/services/transactionService.js and summarize its actual banking behavior in 5 bullet points. Do not modify any repository files." \
+          copilot -p "Analyze the changed JavaScript source files and update the relevant documentation in docs/: business-logic.md, data-model.md, setup-guide.md, or configuration.md. Document only behavior supported by the source code. Do not modify application source files." \
             -s \
+            --allow-tool='shell(git diff --name-only)' \
+            --allow-tool='shell(git status --short)' \
+            --allow-tool='shell(git diff -- docs/)' \
+            --allow-tool='shell(git diff --no-index /dev/null docs/business-logic.md)' \
             --no-ask-user
 
