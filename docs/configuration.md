@@ -19,3 +19,17 @@ No environment variables are documented here until they have been verified in th
 ## Important Note
 
 Do not add API URLs, database connection strings, credentials, or environment-variable names unless they are confirmed by repository evidence.
+
+
+<!-- AUTO-GENERATED: SOURCE INVENTORY START -->
+Last generated: 2026-10-25
+
+The following source files are used by the documentation sync script:
+
+- `src/services/transactionService.js`
+- `src/services/interestService.js`
+- `src/services/securityService.js`
+- `src/models/accountStore.js`
+- `src/utils/validators.js`
+
+<!-- AUTO-GENERATED: SOURCE INVENTORY END -->

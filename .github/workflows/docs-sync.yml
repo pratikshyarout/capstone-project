@@ -75,4 +75,7 @@ jobs:
             --allow-tool='shell(git diff -- docs/)' \
             --allow-tool='shell(git diff --no-index /dev/null docs/business-logic.md)' \
             --no-ask-user
+      - name: Sync documentation
+        if: steps.changes.outputs.relevant == 'true'
+        run: node scripts/sync-docs.js
 
