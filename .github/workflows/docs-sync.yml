@@ -13,6 +13,7 @@ on:
 permissions:
   contents: read
   pull-requests: read
+  copilot-requests: write
 
 jobs:
   docs-sync:
@@ -58,3 +59,16 @@ jobs:
           echo "docs/data-model.md"
           echo "docs/setup-guide.md"
           echo "docs/configuration.md"
+
+          
+      - name: Test Copilot CLI generation
+        if: steps.changes.outputs.relevant == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          npm install --global @github/copilot
+
+          copilot -p "Read src/services/transactionService.js and summarize its actual banking behavior in 5 bullet points. Do not modify any repository files." \
+            -s \
+            --no-ask-user
+
