@@ -101,3 +101,62 @@ Source: `src/services/transactionService.js`
 - Results are sorted newest first; transactions with invalid dates are excluded.
 
 <!-- AUTO-GENERATED: TRANSACTION RULES END -->
+
+
+<!-- AUTO-GENERATED: INTEREST RULES START -->
+## Savings interest service behavior
+
+Source: `src/services/interestService.js`
+
+### Eligibility
+- The service initializes the account's transactions array if needed.
+- If the balance is 500 or less, no interest transaction is recorded.
+- Interest is calculated only when the balance is greater than 500.
+
+### Interest calculation
+- The rate per invocation is 0.00167 (0.167%).
+- Interest amount = current balance × 0.00167.
+- The service records an `INTEREST` transaction with an ISO timestamp and calculated new balance.
+
+### Balance handling
+- The returned summary contains the current balance plus the calculated interest.
+- The function does not assign the calculated balance back to `account.balance`.
+- Calling this function repeatedly recalculates interest from the account's existing balance unless another operation updates that balance.
+
+<!-- AUTO-GENERATED: INTEREST RULES END -->
+
+
+<!-- AUTO-GENERATED: SECURITY RULES START -->
+## Security service behavior
+
+Source: `src/services/securityService.js`
+
+### Account freezing
+- Accounts without a status are initialized as ACTIVE.
+- FREEZE requires a non-empty manager ID.
+- UNFREEZE sets the account status to ACTIVE.
+- Status changes are recorded in statusHistory with an action, actor, and ISO timestamp.
+- Transactions through the freeze-aware wrappers are rejected when the relevant account is frozen.
+
+### Daily withdrawal limit
+- The wrapper rejects withdrawals from frozen accounts.
+- The daily limit is 500 balance units, based on UTC transaction dates.
+- Only transactions of type WITHDRAWAL with numeric amounts count toward the limit.
+- The requested withdrawal is rejected if the total would exceed 500.
+
+### Password validation
+- Passwords must be strings with at least 12 characters.
+- Passwords must contain uppercase and lowercase letters, a number, and a special character.
+- Common passwords in the implementation's blocklist and passwords containing the word 'password' are rejected.
+
+### Suspicious activity
+- Numeric transaction amounts greater than 10,000 generate high-value alerts.
+- Three or more withdrawals of 500 units or less within five minutes trigger a rapid-withdrawal alert.
+- The result includes an isSuspicious boolean and an alerts array.
+
+### Freeze-aware wrappers
+- addDepositSafe rejects deposits when the account is frozen.
+- transferMoneySafe rejects transfers if either account is frozen.
+- These wrappers delegate successful operations to the transaction service.
+
+<!-- AUTO-GENERATED: SECURITY RULES END -->

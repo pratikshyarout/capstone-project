@@ -13,7 +13,6 @@ on:
 permissions:
   contents: read
   pull-requests: read
-  copilot-requests: write
 
 jobs:
   docs-sync:
@@ -31,7 +30,6 @@ jobs:
         with:
           node-version: 20
 
-      
       - name: Detect relevant source changes
         id: changes
         shell: bash
@@ -43,43 +41,22 @@ jobs:
           echo "Changed files:"
           cat changed-files.txt
 
-          if grep -Eq '^(src/.*\.js|app\.js|index\.js|banking\.js)$' changed-files.txt; then
+          echo "changed_files<<EOF" >> "$GITHUB_OUTPUT"
+          cat changed-files.txt >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+          if grep -Eq '^(src/.*\.js|app\.js|index\.js|banking\.js|package\.json)$' changed-files.txt; then
             echo "relevant=true" >> "$GITHUB_OUTPUT"
-            echo "Documentation update may be required."
           else
             echo "relevant=false" >> "$GITHUB_OUTPUT"
-            echo "No relevant source changes found."
           fi
 
-      - name: Show documentation targets
-        if: steps.changes.outputs.relevant == 'true'
-        run: |
-          echo "Potential documentation targets:"
-          echo "docs/business-logic.md"
-          echo "docs/data-model.md"
-          echo "docs/setup-guide.md"
-          echo "docs/configuration.md"
-
-          
-      - name: Generate documentation updates
-        if: steps.changes.outputs.relevant == 'true'
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          npm install --global @github/copilot
-
-          copilot -p "Analyze the changed JavaScript source files and update the relevant documentation in docs/: business-logic.md, data-model.md, setup-guide.md, or configuration.md. Document only behavior supported by the source code. Do not modify application source files." \
-            -s \
-            --allow-tool='shell(git diff --name-only)' \
-            --allow-tool='shell(git status --short)' \
-            --allow-tool='shell(git diff -- docs/)' \
-            --allow-tool='shell(git diff --no-index /dev/null docs/business-logic.md)' \
-            --no-ask-user
       - name: Sync documentation
         if: steps.changes.outputs.relevant == 'true'
+        env:
+          CHANGED_FILES: ${{ steps.changes.outputs.changed_files }}
         run: node scripts/sync-docs.js
 
       - name: Validate documentation
         if: steps.changes.outputs.relevant == 'true'
         run: node scripts/validate-docs.js
-

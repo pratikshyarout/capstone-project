@@ -225,12 +225,170 @@ function updateTransactionDocumentation() {
   console.log("Updated transaction behavior in docs/business-logic.md");
 }
 
+function updateInterestDocumentation() {
+  const docPath = path.join(DOCS_DIR, "business-logic.md");
+  const startMarker = "<!-- AUTO-GENERATED: INTEREST RULES START -->";
+  const endMarker = "<!-- AUTO-GENERATED: INTEREST RULES END -->";
+
+  const generated = [
+    startMarker,
+    "## Savings interest service behavior",
+    "",
+    "Source: `src/services/interestService.js`",
+    "",
+    "### Eligibility",
+    "- The service initializes the account's transactions array if needed.",
+    "- If the balance is 500 or less, no interest transaction is recorded.",
+    "- Interest is calculated only when the balance is greater than 500.",
+    "",
+    "### Interest calculation",
+    "- The rate per invocation is 0.00167 (0.167%).",
+    "- Interest amount = current balance × 0.00167.",
+    "- The service records an `INTEREST` transaction with an ISO timestamp and calculated new balance.",
+    "",
+    "### Balance handling",
+    "- The returned summary contains the current balance plus the calculated interest.",
+    "- The function does not assign the calculated balance back to `account.balance`.",
+    "- Calling this function repeatedly recalculates interest from the account's existing balance unless another operation updates that balance.",
+    "",
+    endMarker,
+  ].join("\n");
+
+  let content = fs.readFileSync(docPath, "utf8");
+  const start = content.indexOf(startMarker);
+  const end = content.indexOf(endMarker);
+
+  if (start !== -1 && end !== -1 && end >= start) {
+    content =
+      content.slice(0, start) +
+      generated +
+      content.slice(end + endMarker.length);
+  } else {
+    content += `\n\n${generated}\n`;
+  }
+
+  fs.writeFileSync(docPath, content);
+  console.log("Updated interest behavior in docs/business-logic.md");
+}
+
+function updateSecurityDocumentation() {
+  const docPath = path.join(DOCS_DIR, "business-logic.md");
+  const startMarker = "<!-- AUTO-GENERATED: SECURITY RULES START -->";
+  const endMarker = "<!-- AUTO-GENERATED: SECURITY RULES END -->";
+
+  const generated = [
+    startMarker,
+    "## Security service behavior",
+    "",
+    "Source: `src/services/securityService.js`",
+    "",
+    "### Account freezing",
+    "- Accounts without a status are initialized as ACTIVE.",
+    "- FREEZE requires a non-empty manager ID.",
+    "- UNFREEZE sets the account status to ACTIVE.",
+    "- Status changes are recorded in statusHistory with an action, actor, and ISO timestamp.",
+    "- Transactions through the freeze-aware wrappers are rejected when the relevant account is frozen.",
+    "",
+    "### Daily withdrawal limit",
+    "- The wrapper rejects withdrawals from frozen accounts.",
+    "- The daily limit is 500 balance units, based on UTC transaction dates.",
+    "- Only transactions of type WITHDRAWAL with numeric amounts count toward the limit.",
+    "- The requested withdrawal is rejected if the total would exceed 500.",
+    "",
+    "### Password validation",
+    "- Passwords must be strings with at least 12 characters.",
+    "- Passwords must contain uppercase and lowercase letters, a number, and a special character.",
+    "- Common passwords in the implementation's blocklist and passwords containing the word 'password' are rejected.",
+    "",
+    "### Suspicious activity",
+    "- Numeric transaction amounts greater than 10,000 generate high-value alerts.",
+    "- Three or more withdrawals of 500 units or less within five minutes trigger a rapid-withdrawal alert.",
+    "- The result includes an isSuspicious boolean and an alerts array.",
+    "",
+    "### Freeze-aware wrappers",
+    "- addDepositSafe rejects deposits when the account is frozen.",
+    "- transferMoneySafe rejects transfers if either account is frozen.",
+    "- These wrappers delegate successful operations to the transaction service.",
+    "",
+    endMarker,
+  ].join("\n");
+
+  let content = fs.readFileSync(docPath, "utf8");
+  const start = content.indexOf(startMarker);
+  const end = content.indexOf(endMarker);
+
+  if (start !== -1 && end !== -1 && end >= start) {
+    content =
+      content.slice(0, start) +
+      generated +
+      content.slice(end + endMarker.length);
+  } else {
+    content += `\n\n${generated}\n`;
+  }
+
+  fs.writeFileSync(docPath, content);
+  console.log("Updated security behavior in docs/business-logic.md");
+}
+
+
+function updateAccountStoreDocumentation() {
+  const docPath = path.join(DOCS_DIR, "data-model.md");
+  const startMarker = "<!-- AUTO-GENERATED: ACCOUNT STORE START -->";
+  const endMarker = "<!-- AUTO-GENERATED: ACCOUNT STORE END -->";
+
+  const generated = [
+    startMarker,
+    "## Account store behavior",
+    "",
+    "Source: `src/models/accountStore.js`",
+    "",
+    "### Storage",
+    "- Accounts are held in an in-memory array named `accounts`.",
+    "- `getAccounts()` returns the accounts array directly.",
+    "- This module does not implement persistent database storage.",
+    "",
+    "### Account number generation",
+    "- Account numbers are generated as 10-digit strings.",
+    "- Generation retries while the number matches an existing account.",
+    "",
+    "### Account creation",
+    "- Account data must be an object.",
+    "- First and last names must pass `requireNonEmptyString`.",
+    "- The initial deposit must be a number and cannot be NaN.",
+    "- Initial deposits below 50 are rejected.",
+    "- A successful account receives an account number, names, initial balance, and ISO creation timestamp.",
+    "- The new account is appended to the in-memory array and returned.",
+    "",
+    endMarker,
+  ].join("\n");
+
+  let content = fs.readFileSync(docPath, "utf8");
+  const start = content.indexOf(startMarker);
+  const end = content.indexOf(endMarker);
+
+  if (start !== -1 && end !== -1 && end >= start) {
+    content =
+      content.slice(0, start) +
+      generated +
+      content.slice(end + endMarker.length);
+  } else {
+    content += `\n\n${generated}\n`;
+  }
+
+  fs.writeFileSync(docPath, content);
+  console.log("Updated account store documentation in docs/data-model.md");
+}
+
+
 
 try {
   const files = readSourceFiles();
   updateConfiguration(files);
   updateBusinessLogic(files);
   updateTransactionDocumentation();
+  updateInterestDocumentation();
+  updateSecurityDocumentation();
+  updateAccountStoreDocumentation();
   reportAffectedDocs();
 
   console.log(`Mapped ${files.length} source files to documentation targets.`);
