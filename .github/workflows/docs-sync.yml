@@ -79,3 +79,7 @@ jobs:
         if: steps.changes.outputs.relevant == 'true'
         run: node scripts/sync-docs.js
 
+      - name: Validate documentation
+        if: steps.changes.outputs.relevant == 'true'
+        run: node scripts/validate-docs.js
+
