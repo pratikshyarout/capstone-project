@@ -30,6 +30,7 @@ jobs:
         with:
           node-version: 20
 
+      
       - name: Detect relevant source changes
         id: changes
         shell: bash
@@ -38,15 +39,22 @@ jobs:
             "origin/${{ github.base_ref }}...HEAD" \
             > changed-files.txt
 
-          if grep -Eq '^(src/|app\.js$|index\.js$|banking\.js$)' changed-files.txt; then
+          echo "Changed files:"
+          cat changed-files.txt
+
+          if grep -Eq '^(src/.*\.js|app\.js|index\.js|banking\.js)$' changed-files.txt; then
             echo "relevant=true" >> "$GITHUB_OUTPUT"
+            echo "Documentation update may be required."
           else
             echo "relevant=false" >> "$GITHUB_OUTPUT"
+            echo "No relevant source changes found."
           fi
 
-      - name: Report result
-        if: always()
+      - name: Show documentation targets
+        if: steps.changes.outputs.relevant == 'true'
         run: |
-          echo "Documentation sync workflow executed."
-          echo "Relevant source changes: ${{ steps.changes.outputs.relevant }}"
-          echo "Next step: generate and validate a documentation patch."
+          echo "Potential documentation targets:"
+          echo "docs/business-logic.md"
+          echo "docs/data-model.md"
+          echo "docs/setup-guide.md"
+          echo "docs/configuration.md"
