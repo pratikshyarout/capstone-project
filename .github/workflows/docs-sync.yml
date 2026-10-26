@@ -1,0 +1,150 @@
+
+name: Documentation Sync
+
+on:
+  pull_request:
+    branches:
+      - master
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  docs-sync:
+    name: Generate and validate documentation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Detect relevant source changes
+        id: changes
+        shell: bash
+        run: |
+          git diff --name-only \
+            "origin/${{ github.base_ref }}...HEAD" \
+            > changed-files.txt
+
+          echo "Changed files:"
+          cat changed-files.txt
+
+          echo "changed_files<<EOF" >> "$GITHUB_OUTPUT"
+          cat changed-files.txt >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+          if grep -Eq '^(src/.*\.js|app\.js|index\.js|banking\.js|package\.json)$' changed-files.txt; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+            echo "Relevant source changes detected."
+          else
+            echo "relevant=false" >> "$GITHUB_OUTPUT"
+            echo "No relevant source changes detected."
+          fi
+
+      - name: Sync documentation
+        if: steps.changes.outputs.relevant == 'true'
+        env:
+          CHANGED_FILES: ${{ steps.changes.outputs.changed_files }}
+        run: node scripts/sync-docs.js
+
+      - name: Validate documentation
+        if: steps.changes.outputs.relevant == 'true'
+        run: node scripts/validate-docs.js
+
+      - name: Upload generated documentation
+        if: steps.changes.outputs.relevant == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-documentation
+          path: docs/
+          if-no-files-found: error
+
+  publish-docs:
+    name: Publish generated documentation
+    needs: docs-sync
+    if: >-
+      needs.docs-sync.result == 'success' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Download generated documentation
+        uses: actions/download-artifact@v4
+        with:
+          name: generated-documentation
+          path: generated-docs/
+        continue-on-error: true
+
+      - name: Check generated documentation
+        id: artifact
+        shell: bash
+        run: |
+          if [ ! -d generated-docs ] || [ -z "$(ls -A generated-docs)" ]; then
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "No generated documentation artifact; nothing to publish."
+          else
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout master
+        if: steps.artifact.outputs.available == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          path: repository
+          fetch-depth: 0
+
+      - name: Publish documentation pull request
+        if: steps.artifact.outputs.available == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        working-directory: repository
+        shell: bash
+        run: |
+          BRANCH="docs-sync/${PR_NUMBER}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin master
+          git checkout -B "$BRANCH" origin/master
+
+          cp -R ../generated-docs/. docs/
+
+          git add docs/
+
+          if git diff --cached --quiet; then
+            echo "No documentation changes to publish."
+            exit 0
+          fi
+
+          git commit -m "docs: sync generated documentation"
+          git push --force-with-lease origin "$BRANCH"
+
+          if gh pr view "$BRANCH" --json number >/dev/null 2>&1; then
+            echo "Documentation pull request already exists."
+          else
+            gh pr create \
+              --base master \
+              --head "$BRANCH" \
+              --title "docs: sync generated documentation" \
+              --body "Generated documentation updates from source changes in PR #${PR_NUMBER}."
+          fi
+

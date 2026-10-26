@@ -103,6 +103,7 @@ Source: `src/services/transactionService.js`
 <!-- AUTO-GENERATED: TRANSACTION RULES END -->
 
 
+
 <!-- AUTO-GENERATED: INTEREST RULES START -->
 ## Savings interest service behavior
 
@@ -110,20 +111,19 @@ Source: `src/services/interestService.js`
 
 ### Eligibility
 - The service initializes the account's transactions array if needed.
-- If the balance is 500 or less, no interest transaction is recorded.
-- Interest is calculated only when the balance is greater than 500.
+- Interest is applied only when the account balance is greater than 500.
 
 ### Interest calculation
-- The rate per invocation is 0.00167 (0.167%).
-- Interest amount = current balance × 0.00167.
+- Interest rate per invocation: 0.00167 (0.167%).
+- Interest amount = current balance * 0.00167.
 - The service records an `INTEREST` transaction with an ISO timestamp and calculated new balance.
 
 ### Balance handling
 - The returned summary contains the current balance plus the calculated interest.
 - The function does not assign the calculated balance back to `account.balance`.
-- Calling this function repeatedly recalculates interest from the account's existing balance unless another operation updates that balance.
 
 <!-- AUTO-GENERATED: INTEREST RULES END -->
+
 
 
 <!-- AUTO-GENERATED: SECURITY RULES START -->
