@@ -103,6 +103,7 @@ Source: `src/services/transactionService.js`
 <!-- AUTO-GENERATED: TRANSACTION RULES END -->
 
 
+
 <!-- AUTO-GENERATED: INTEREST RULES START -->
 ## Savings interest service behavior
 
@@ -122,6 +123,7 @@ Source: `src/services/interestService.js`
 - The function does not assign the calculated balance back to `account.balance`.
 
 <!-- AUTO-GENERATED: INTEREST RULES END -->
+
 
 
 <!-- AUTO-GENERATED: SECURITY RULES START -->
