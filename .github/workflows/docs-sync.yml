@@ -78,6 +78,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          
           # Save generated documentation changes before switching branches.
           git add docs/
           git diff --cached --binary > /tmp/docs-update.patch
@@ -89,11 +90,12 @@ jobs:
 
           BRANCH="docs-sync/${PR_NUMBER}"
 
-          # Start from the latest master branch.
+          # Stash generated changes, then switch to master.
+          git stash push -m "generated-docs" -- docs/
           git fetch origin master
           git checkout -B "$BRANCH" origin/master
 
-          # Apply the generated documentation changes.
+          # Apply the generated documentation patch.
           git apply --3way /tmp/docs-update.patch
 
           git add docs/
