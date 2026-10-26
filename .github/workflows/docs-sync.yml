@@ -70,40 +70,38 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         shell: bash
         run: |
-          if git diff --quiet -- docs/; then
+          git add docs/
+          git diff --cached --binary > /tmp/docs-update.patch
+
+          if [ ! -s /tmp/docs-update.patch ]; then
+            echo "No documentation changes to publish."
+            exit 0
+          fi
+
+          BRANCH="docs-sync/${PR_NUMBER}"
+
+          git fetch origin master
+          git checkout -B "$BRANCH" origin/master
+
+          # Create destination files if they don't exist on master.
+          mkdir -p docs
+          touch docs/business-logic.md docs/configuration.md \
+                docs/data-model.md docs/setup-guide.md
+
+          git apply --3way --reject /tmp/docs-update.patch || {
+            echo "Patch could not be applied cleanly."
+            find . -name "*.rej" -print
+            exit 1
+          }
+
+          git add docs/
+          if git diff --cached --quiet; then
             echo "No documentation changes to publish."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          
-          # Save generated documentation changes before switching branches.
-          git add docs/
-          git diff --cached --binary > /tmp/docs-update.patch
-
-          if [ ! -s /tmp/docs-update.patch ]; then
-            echo "No staged documentation changes to publish."
-            exit 0
-          fi
-
-          BRANCH="docs-sync/${PR_NUMBER}"
-
-          # Stash generated changes, then switch to master.
-          git stash push -m "generated-docs" -- docs/
-          git fetch origin master
-          git checkout -B "$BRANCH" origin/master
-
-          # Apply the generated documentation patch.
-          git apply --3way /tmp/docs-update.patch
-
-          git add docs/
-          if git diff --cached --quiet; then
-            echo "No new documentation changes after applying patch."
-            exit 0
-          fi
-
           git commit -m "docs: sync generated documentation"
           git push --force-with-lease origin "$BRANCH"
 
