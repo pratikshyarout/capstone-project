@@ -22,7 +22,7 @@ Do not add API URLs, database connection strings, credentials, or environment-va
 
 
 <!-- AUTO-GENERATED: SOURCE INVENTORY START -->
-Last generated: 2026-10-25
+Last generated: 2026-10-26
 
 ## Source-to-documentation mapping
 

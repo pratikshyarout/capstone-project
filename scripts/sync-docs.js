@@ -225,10 +225,29 @@ function updateTransactionDocumentation() {
   console.log("Updated transaction behavior in docs/business-logic.md");
 }
 
+
+
 function updateInterestDocumentation() {
   const docPath = path.join(DOCS_DIR, "business-logic.md");
+  const sourcePath = path.join(SRC_DIR, "services/interestService.js");
+
   const startMarker = "<!-- AUTO-GENERATED: INTEREST RULES START -->";
   const endMarker = "<!-- AUTO-GENERATED: INTEREST RULES END -->";
+
+  const source = fs.readFileSync(sourcePath, "utf8");
+
+  const rateMatch = source.match(/account\.balance\s*\*\s*(0?\.\d+)/);
+  const thresholdMatch = source.match(/account\.balance\s*<=\s*(\d+)/);
+
+  if (!rateMatch || !thresholdMatch) {
+    throw new Error(
+      "Could not detect interest rate or eligibility threshold in interestService.js"
+    );
+  }
+
+  const rate = Number(rateMatch[1]);
+  const threshold = Number(thresholdMatch[1]);
+  const percentage = (rate * 100).toFixed(3);
 
   const generated = [
     startMarker,
@@ -238,18 +257,16 @@ function updateInterestDocumentation() {
     "",
     "### Eligibility",
     "- The service initializes the account's transactions array if needed.",
-    "- If the balance is 500 or less, no interest transaction is recorded.",
-    "- Interest is calculated only when the balance is greater than 500.",
+    `- Interest is applied only when the account balance is greater than ${threshold}.`,
     "",
     "### Interest calculation",
-    "- The rate per invocation is 0.00167 (0.167%).",
-    "- Interest amount = current balance × 0.00167.",
+    `- Interest rate per invocation: ${rate} (${percentage}%).`,
+    `- Interest amount = current balance * ${rate}.`,
     "- The service records an `INTEREST` transaction with an ISO timestamp and calculated new balance.",
     "",
     "### Balance handling",
     "- The returned summary contains the current balance plus the calculated interest.",
     "- The function does not assign the calculated balance back to `account.balance`.",
-    "- Calling this function repeatedly recalculates interest from the account's existing balance unless another operation updates that balance.",
     "",
     endMarker,
   ].join("\n");
@@ -264,11 +281,13 @@ function updateInterestDocumentation() {
       generated +
       content.slice(end + endMarker.length);
   } else {
-    content += `\n\n${generated}\n`;
+    throw new Error(
+      "Interest documentation markers were not found. Check docs/business-logic.md."
+    );
   }
 
   fs.writeFileSync(docPath, content);
-  console.log("Updated interest behavior in docs/business-logic.md");
+  console.log("Updated source-driven interest documentation");
 }
 
 function updateSecurityDocumentation() {
@@ -331,10 +350,24 @@ function updateSecurityDocumentation() {
 }
 
 
+
 function updateAccountStoreDocumentation() {
   const docPath = path.join(DOCS_DIR, "data-model.md");
+  const sourcePath = path.join(SRC_DIR, "models/accountStore.js");
+
   const startMarker = "<!-- AUTO-GENERATED: ACCOUNT STORE START -->";
   const endMarker = "<!-- AUTO-GENERATED: ACCOUNT STORE END -->";
+
+  const source = fs.readFileSync(sourcePath, "utf8");
+  const minimumMatch = source.match(/initialDeposit\s*<\s*(\d+(?:\.\d+)?)/);
+
+  if (!minimumMatch) {
+    throw new Error(
+      "Could not detect minimum initial deposit in accountStore.js"
+    );
+  }
+
+  const minimumDeposit = Number(minimumMatch[1]);
 
   const generated = [
     startMarker,
@@ -355,7 +388,7 @@ function updateAccountStoreDocumentation() {
     "- Account data must be an object.",
     "- First and last names must pass `requireNonEmptyString`.",
     "- The initial deposit must be a number and cannot be NaN.",
-    "- Initial deposits below 50 are rejected.",
+    `- Initial deposits below ${minimumDeposit} are rejected.`,
     "- A successful account receives an account number, names, initial balance, and ISO creation timestamp.",
     "- The new account is appended to the in-memory array and returned.",
     "",
@@ -376,9 +409,8 @@ function updateAccountStoreDocumentation() {
   }
 
   fs.writeFileSync(docPath, content);
-  console.log("Updated account store documentation in docs/data-model.md");
+  console.log("Updated source-driven account store documentation");
 }
-
 
 
 try {
