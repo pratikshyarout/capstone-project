@@ -11,12 +11,12 @@ on:
       - reopened
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
+  pull-requests: read
 
 jobs:
   docs-sync:
-    name: docs-sync
+    name: Generate and validate documentation
     runs-on: ubuntu-latest
 
     steps:
@@ -47,8 +47,10 @@ jobs:
 
           if grep -Eq '^(src/.*\.js|app\.js|index\.js|banking\.js|package\.json)$' changed-files.txt; then
             echo "relevant=true" >> "$GITHUB_OUTPUT"
+            echo "Relevant source changes detected."
           else
             echo "relevant=false" >> "$GITHUB_OUTPUT"
+            echo "No relevant source changes detected."
           fi
 
       - name: Sync documentation
@@ -60,48 +62,79 @@ jobs:
       - name: Validate documentation
         if: steps.changes.outputs.relevant == 'true'
         run: node scripts/validate-docs.js
-        
-     
-     
-      - name: Publish documentation updates
+
+      - name: Upload generated documentation
         if: steps.changes.outputs.relevant == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-documentation
+          path: docs/
+          if-no-files-found: error
+
+  publish-docs:
+    name: Publish generated documentation
+    needs: docs-sync
+    if: >-
+      needs.docs-sync.result == 'success' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Download generated documentation
+        uses: actions/download-artifact@v4
+        with:
+          name: generated-documentation
+          path: generated-docs/
+        continue-on-error: true
+
+      - name: Check generated documentation
+        id: artifact
+        shell: bash
+        run: |
+          if [ ! -d generated-docs ] || [ -z "$(ls -A generated-docs)" ]; then
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "No generated documentation artifact; nothing to publish."
+          else
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout master
+        if: steps.artifact.outputs.available == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          path: repository
+          fetch-depth: 0
+
+      - name: Publish documentation pull request
+        if: steps.artifact.outputs.available == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+        working-directory: repository
         shell: bash
         run: |
-          git add docs/
-          git diff --cached --binary > /tmp/docs-update.patch
-
-          if [ ! -s /tmp/docs-update.patch ]; then
-            echo "No documentation changes to publish."
-            exit 0
-          fi
-
           BRANCH="docs-sync/${PR_NUMBER}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git fetch origin master
           git checkout -B "$BRANCH" origin/master
 
-          # Create destination files if they don't exist on master.
-          mkdir -p docs
-          touch docs/business-logic.md docs/configuration.md \
-                docs/data-model.md docs/setup-guide.md
-
-          git apply --3way --reject /tmp/docs-update.patch || {
-            echo "Patch could not be applied cleanly."
-            find . -name "*.rej" -print
-            exit 1
-          }
+          cp -R ../generated-docs/. docs/
 
           git add docs/
+
           if git diff --cached --quiet; then
             echo "No documentation changes to publish."
             exit 0
           fi
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "docs: sync generated documentation"
           git push --force-with-lease origin "$BRANCH"
 
@@ -112,5 +145,6 @@ jobs:
               --base master \
               --head "$BRANCH" \
               --title "docs: sync generated documentation" \
-              --body "Automated documentation updates generated from source changes in PR #${PR_NUMBER}."
+              --body "Generated documentation updates from source changes in PR #${PR_NUMBER}."
           fi
+
